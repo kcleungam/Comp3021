@@ -18,14 +18,17 @@ public class ChatServer extends JFrame implements ActionListener{
 
     JButton startUpServiceButton;
     JButton stopServiceButton;
-    JButton notificationButton;
+    public static DefaultComboBoxModel<String> model;
+    JTextField messageField;
+    JComboBox toWho;
     static JLabel countUserLabel;
-    /*
+
+
+    /**
      *      Constructor
      */
-
     public ChatServer(){
-        setSize(400, 300);
+        setSize(600, 450);
 
         JMenuBar menuBar = new JMenuBar();
         setJMenuBar(menuBar);
@@ -85,7 +88,10 @@ public class ChatServer extends JFrame implements ActionListener{
         c.ipadx = 60;
         JLabel sendTo = new JLabel("Send To:");
         sendTo.setHorizontalAlignment(JLabel.RIGHT);
-        JComboBox toWho = new JComboBox();
+        model = new DefaultComboBoxModel<String>();
+        toWho = new JComboBox(model);
+        toWho.setActionCommand("toWho");
+        toWho.addActionListener(this);
         panel_1.add(sendTo, c);
         panel_1.add(toWho, c);
 
@@ -93,7 +99,7 @@ public class ChatServer extends JFrame implements ActionListener{
         c.gridy = 1;
         JLabel sendMessageLabel = new JLabel("Send Message:");
         sendMessageLabel.setHorizontalAlignment(JLabel.RIGHT);
-        JTextField messageField = new JTextField();
+        messageField = new JTextField();
         JButton sendButton = new JButton("Send");
         sendButton.addActionListener(this);
 
@@ -105,15 +111,6 @@ public class ChatServer extends JFrame implements ActionListener{
         c.ipadx = 0;
         panel_1.add(sendButton, c);
 
-
-        c.gridy = 2;
-        c.gridx = 3;
-        c.gridwidth = 2;
-        c.ipadx = 0;
-        notificationButton = new JButton("Notify all users");
-        notificationButton.addActionListener(this);
-        panel_1.add(notificationButton, c);
-
         c.gridy = 2;
         c.gridx = 0;
         countUserLabel = new JLabel("There are 0 users online");
@@ -124,8 +121,8 @@ public class ChatServer extends JFrame implements ActionListener{
 
     }
 
-     /*
-     *  Action Listener to listen button
+     /**
+     *       Action Listener to listen button
      */
 
     @Override
@@ -135,13 +132,18 @@ public class ChatServer extends JFrame implements ActionListener{
                 PortConfig portConfig = new PortConfig();
                 portConfig.show();
                 break;
+
+            // Remember to set the button on and off!
             case "Startup Service":
                 server = new Server(textPane);
                 server.setPortNo(portNo);
                 server.start();
                 stopServiceButton.setEnabled(true);
                 startUpServiceButton.setEnabled(false);
+                model.addElement("All Users");
                 break;
+
+            // Remember to set the button on and off!
             case "Stop Service":
                 if(server == null){
                     System.out.println("You have't Start any Server!");
@@ -149,19 +151,55 @@ public class ChatServer extends JFrame implements ActionListener{
                     server.stopServer();
                     stopServiceButton.setEnabled(false);
                     startUpServiceButton.setEnabled(true);
+                    model.removeAllElements();
                 }
                 break;
-            case "Exit":
-                System.out.println(portNo);
-                //System.exit(0);
-                break;
-            case "Send":
 
+            case "Exit":
+                System.exit(0);
                 break;
-            case "Notify all users":
+
+            // The Server can send to all or send to specific user, actually it put the message into an arraylist
+            // User will get the message when they check for update
+            case "Send":
+                if(messageField.getText().equals("")){
+                    break;      //do nothing if no message
+                }else{
+                    //Send to all Users
+                    if(toWho.getSelectedItem().toString().equals("All Users")){
+                        String content = "";
+                        content += "Admin Say: ";
+                        content += messageField.getText();
+                        for(int i = 0; i < Server.clientDataArrayList.size(); i++){
+                            // The user ID 9999 is not important since we don't use it this time
+                            Message message1 = new Message(9999, Server.clientDataArrayList.get(i).id, content);
+                            Server.messageArrayList.add(message1);
+                        }
+                        String show = content;
+
+                        // Show on the textPane
+                        try {
+                            ChatServer.doc.insertString(0, show, null);
+                        } catch (Exception f){
+                            f.printStackTrace();
+                        }
+
+                    } else {
+                        //Send to specific user
+                        String content = "";
+                        content += "Admin Say To ";
+                        content += ( toWho.getSelectedItem().toString().split(",") )[0];
+                        content += "(" + (toWho.getSelectedItem().toString().split(","))[1] + ") :";
+                        content += messageField.getText();
+
+                        int toID = Integer.parseInt( (toWho.getSelectedItem().toString().split(","))[1] );
+                        Message message1 = new Message(9999,toID, content);
+                        Server.messageArrayList.add(message1);
+                    }
+                }
+                break;
 
             default:
-                System.out.println("It should not happened");
                 break;
         }
 

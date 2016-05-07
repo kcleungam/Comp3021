@@ -22,6 +22,9 @@ public class ServerThread extends Thread{
         this.server = ser;
     }
 
+    /**
+     *          This is a worker thread which keep handling the request from Client
+     */
     public void run() {
         try {
             isAlive = true;
@@ -34,10 +37,10 @@ public class ServerThread extends Thread{
             while (true) {
                 String readLine = bin.readLine();
                 String[] strings = readLine.split(";;;;");
+
+                // handle different requests
                 if(strings[0].equals("Logout")){
                     ChatServer.doc.insertString(0, "User: " + strings[2] + "with id:" + strings[1] + "has logout\n", null);
-                    System.out.println(strings[1]);
-                    System.out.println(strings[2]);
                     server.removeOnlineUser( Integer.parseInt(strings[1]), strings[2]);
                     ChatServer.doc.insertString(0, Server.clientDataArrayList.size() + " users is online\n", null);
                     pout.println("Kill");
@@ -49,6 +52,7 @@ public class ServerThread extends Thread{
                     isAlive = false;
                     break;
                 } else if(strings[0].equals("Login")){
+
                     int id = Server.idCount;
                     ++Server.idCount;
                     ClientData CD = new ClientData(id, strings[1]);
@@ -58,35 +62,58 @@ public class ServerThread extends Thread{
                     ChatServer.doc.insertString(0, "User: \"" + CD.username + "\" with id: " + CD.id + " has logon\n", null);
 
                 } else if(strings[0].equals("GetList")){
+
                     String temp = "";
                     temp += "List;;;;";
                     for(int i = 0; i < Server.clientDataArrayList.size(); i++){
-                        System.out.println(Server.clientDataArrayList.get(i).username);
                         temp += Server.clientDataArrayList.get(i).username + "," + Integer.toString( Server.clientDataArrayList.get(i).id );
                         temp += ";;;;";
                     }
                     pout.println(temp);
 
                 } else if(strings[0].equals("Whisper")){
+
                     int fromID = Integer.parseInt(strings[1]);
                     int toID = Integer.parseInt(strings[2]);
                     String content = strings[3];
                     Message message = new Message(fromID, toID, content);
                     Server.whisperArrayList.add(message);
+                    String show = strings[1] + "whisper to " + strings[2] + ":" + strings[3];
+                    ChatServer.doc.insertString(0, show, null);
 
-                } else if(strings[0].equals("Check update") ){
+                } else if(strings[0].equals("Send")){
+
+                    int fromID = Integer.parseInt(strings[1]);
+                    String content = strings[2];
+                    for(int i = 0; i < Server.clientDataArrayList.size(); i++){
+                        Message message1 = new Message(fromID, Server.clientDataArrayList.get(i).id, content);
+                        Server.messageArrayList.add(message1);
+                    }
+                    String show = strings[2];
+                    ChatServer.doc.insertString(0, show, null);
+
+                }else if(strings[0].equals("Check update") ){
+
                     if(serverMessage.equals("")){
-                        if(Server.whisperArrayList.size() > 0){
+                        if(Server.whisperArrayList.size() > 0 ){
                             if ( server.checkWhisper( Integer.parseInt(strings[1]) ) ){
                                 pout.println(server.popWhisper( Integer.parseInt(strings[1]) ));
                                 serverMessage = "";
                                 sendDone = true;
-                            }else {
+                            } else {
                                 pout.println("No command;;;;");
                                 serverMessage = "";
                                 sendDone = true;
                             }
-                        }else {
+                            continue;
+                        } else if(Server.messageArrayList.size() > 0 ){
+                            if(server.checkMessage(Integer.parseInt(strings[1] ) ) ){
+                                pout.println(server.popMessage(Integer.parseInt(strings[1] ) ) );
+                                serverMessage = "";
+                                sendDone = true;
+                            }
+                            continue;
+                        } else {
                             pout.println("No command;;;;");
                             serverMessage = "";
                             sendDone = true;
@@ -119,11 +146,6 @@ public class ServerThread extends Thread{
             System.err.println(e);
         }
 
-        System.out.println("This thread is done!");
-    }
-
-    public void send(String s){
-        pout.println(s);
     }
 
     public void setServerMessage(String s){

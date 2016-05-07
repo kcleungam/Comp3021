@@ -9,14 +9,21 @@ import java.awt.event.ActionListener;
  * Created by Krauser on 5/5/2016.
  */
 public class ConnectConfig extends JDialog implements ActionListener{
-	public String defaultIP = "127.0.0.1";
-	public String defaultPort = "8888";
+
     public JTextField ipField;
     public JTextField portField;
-	
-	
-	public ConnectConfig() {
-		
+	public String ip;
+    public String port;
+
+    /**
+     *          The JDialog which help user to change connect config, nothing special
+     * @param ip
+     * @param port
+     */
+
+	public ConnectConfig(String ip, String port) {
+		this.ip = ip;
+        this.port = port;
         setSize(400, 200);
 		
 		JPanel panel_1 = new JPanel();
@@ -31,12 +38,12 @@ public class ConnectConfig extends JDialog implements ActionListener{
         panel_1.setLayout(g);
 
         c.gridy = 0;
-        JLabel ip = new JLabel("Please Input Server IP:");
-        ip.setHorizontalAlignment(JLabel.RIGHT);
-        panel_1.add(ip, c);
+        JLabel ipLabel = new JLabel("Please Input Server IP:");
+        ipLabel.setHorizontalAlignment(JLabel.RIGHT);
+        panel_1.add(ipLabel, c);
         
         ipField = new JTextField();
-        ipField.setText(defaultIP);
+        ipField.setText(ip);
         ipField.setColumns(10);
         c.gridwidth = 3;
         panel_1.add(ipField, c);
@@ -46,7 +53,7 @@ public class ConnectConfig extends JDialog implements ActionListener{
         portNo.setHorizontalAlignment(JLabel.RIGHT);
         panel_1.add(portNo, c);
         portField = new JTextField();
-        portField.setText(defaultPort);
+        portField.setText(port);
         portField.setColumns(8);
         c.gridwidth = 3;
         panel_1.add(portField, c);
@@ -78,9 +85,6 @@ public class ConnectConfig extends JDialog implements ActionListener{
                 }
         }
 	
-    public static void main(String args[]) {
-        ConnectConfig frame = new ConnectConfig();
-        frame.show();
-    }
+
 
 }

@@ -19,7 +19,7 @@ public class ChatClient extends JFrame implements ActionListener{
     public Socket socket;
     public static StyledDocument doc;
 
-    public static JTextField showUserID = new JTextField("Your name is:" + username);
+    public static JTextField showUserID = new JTextField("Your name is:" + username );
     JButton loginBtn;
     JButton logoutBtn;
     JComboBox toWho;
@@ -41,7 +41,7 @@ public class ChatClient extends JFrame implements ActionListener{
         /*
          *      Initialize
          */
-        setSize(400, 300);     // set the window size
+        setSize(600, 450);     // set the window size
 
         JMenuBar menuBar = new JMenuBar();
         setJMenuBar(menuBar);
@@ -143,6 +143,11 @@ public class ChatClient extends JFrame implements ActionListener{
         showUserID.setEditable(false);
         panel_1.add(showUserID, c);
 
+        try{
+            doc.insertString(0, "Welcome to Leung Ka Chun 20125844 chatting room", null);
+        } catch (Exception f){
+            f.printStackTrace();
+        }
 
 
     }
@@ -154,11 +159,11 @@ public class ChatClient extends JFrame implements ActionListener{
         public void actionPerformed(ActionEvent e) {
             switch (e.getActionCommand()){
                 case "User Config":
-                    UserConfig userConfig = new UserConfig();
+                    UserConfig userConfig = new UserConfig(username);
                     userConfig.show();
                     break;
                 case "Connect Config":
-                    ConnectConfig connectConfig = new ConnectConfig();
+                    ConnectConfig connectConfig = new ConnectConfig(ipAddress, Integer.toString(portNo));
                     connectConfig.show();
                     break;
                 case "Login":
@@ -209,7 +214,7 @@ public class ChatClient extends JFrame implements ActionListener{
                         sendButton.setEnabled(false);
                         connectBtn.setEnabled(true);
                         userConfigBtn.setEnabled(true);
-
+                        model.removeAllElements();
                         constantCheck.stop();
                     }catch (Exception f){
                         f.printStackTrace();
@@ -237,10 +242,23 @@ public class ChatClient extends JFrame implements ActionListener{
                             String toID = (toWho.getSelectedItem().toString().split(","))[1];
                             message +=   toID + ";;;;";
                             message += messageField.getText() + ";;;;";
-                            System.out.println(message);
                             pout.println(message);
                             messageField.setText("");
                         } else{
+                            String message1 = "";
+                            message1 += "Send;;;;";
+                            message1 += Integer.toString(id) + ";;;;";
+
+                            message1 += username + "(" + Integer.toString(id) + ") ";
+                            if(toWho.getSelectedItem().toString().equals("All Users")){
+                                message1 += "say to All Users: ";
+                            }else{
+                                String[] s = (toWho.getSelectedItem().toString().split(","));
+                                message1 +=   "say to " + s[0] + "(" + s[1] + "): ";
+                            }
+                            message1 += messageField.getText();
+                            pout.println(message1);
+                            messageField.setText("");
 
                         }
 
@@ -283,14 +301,11 @@ public class ChatClient extends JFrame implements ActionListener{
                             boolean exist = false;
                             for(int j = 0; j < model.getSize(); j++){
                                 if(model.getElementAt(j).equals(strings[i])){
-                                    System.out.println("Hi");
                                     exist = true;               // Check if the element exists
                                 }
                             }
                             if(exist == false){
                                 model.addElement(strings[i]);   // add the new element if it is not exist
-                            } else{
-                                System.out.println("Fuck");
                             }
                         }
                     }
@@ -301,10 +316,14 @@ public class ChatClient extends JFrame implements ActionListener{
                     }catch (Exception f){}
                 }
 
+
+                // Check for updates
                 pout2.println("Check update;;;;" + id + ";;;;");
                 try{
                     s = bin2.readLine();
                     strings = s.split(";;;;");
+
+                    // Receive different reply and handle it
                     if(strings[0].equals("Kill")){
                         bin.close();
                         pout.close();
@@ -313,17 +332,17 @@ public class ChatClient extends JFrame implements ActionListener{
                         socket.close();
                         logoutBtn.setEnabled(false);
                         loginBtn.setEnabled(true);
-                        doc.insertString(0,"Server has shutted down, disconnected", null);
+                        doc.insertString(0,"Server has shutted down, disconnected" + "\n", null);
 
                     } else if(strings[0].equals("No command")){
                         //do nothing
-                    } else if(strings[0].equals("Notification")){
-                        doc.insertString(0,"Server has just sent you a notification", null);
                     } else if(strings[0].equals("WhisperMessage")){
-                        doc.insertString(0, strings[1] + "(" + strings[2] + ") " + " whisper to you :"  + strings[5], null);
+                        doc.insertString(0, strings[1] + "(" + strings[2] + ") " + " whisper to you :"  + strings[5] + "\n", null);
+                    } else if(strings[0].equals("Send")){
+                        doc.insertString(0, strings[1] + "\n", null);
                     }
-                    this.sleep(1500);
 
+                    this.sleep(1500);               // Stop for a while as my computer is slow, can't handle too many request
                 } catch (Exception e){
                     try {
                         this.join();

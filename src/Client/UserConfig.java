@@ -9,9 +9,15 @@ import java.awt.event.ActionListener;
  * Created by Krauser on 5/5/2016.
  */
 public class UserConfig extends JDialog implements ActionListener{
-	public String defaultUsername = "hkuster";
 	public JTextField usernameField;
-	public UserConfig(){
+	public String name;
+
+	/**
+	 * 		The JDialog which help users to change its name, nothing special
+	 * @param username
+     */
+	public UserConfig(String username){
+		name = username;
 		setSize(400, 200);
 		
 		JPanel panel_1 = new JPanel();
@@ -31,7 +37,7 @@ public class UserConfig extends JDialog implements ActionListener{
 	    panel_1.add(usernameLabel, c);
 	    
 	    usernameField = new JTextField();
-	    usernameField.setText(defaultUsername);
+	    usernameField.setText(name);
 	    usernameField.setColumns(10);
 	    c.gridwidth = 3;
 	    panel_1.add(usernameField, c);
@@ -56,16 +62,13 @@ public class UserConfig extends JDialog implements ActionListener{
 	public void actionPerformed(ActionEvent e) {
 		if(e.getActionCommand().equals("Save")){
 			ChatClient.username = usernameField.getText();
+			ChatClient.showUserID.setText(usernameField.getText());
 			dispose();
 		}else if(e.getActionCommand().equals("Cancel")){
 			dispose();
 		}
 	}
 
-    public static void main(String args[]) {
-        UserConfig frame = new UserConfig();
-        frame.show();
-    }
 
 	
 }
