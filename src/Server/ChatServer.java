@@ -14,10 +14,12 @@ public class ChatServer extends JFrame implements ActionListener{
     public JTextPane textPane = new JTextPane();
     public static String portNo = "8888";
     public Server server;
+    public static StyledDocument doc;
 
     JButton startUpServiceButton;
     JButton stopServiceButton;
-
+    JButton notificationButton;
+    static JLabel countUserLabel;
     /*
      *      Constructor
      */
@@ -63,7 +65,7 @@ public class ChatServer extends JFrame implements ActionListener{
         getContentPane().add(textPane, BorderLayout.CENTER);
         textPane.setEditable(false);
         textPane.setText( "original text" );
-        StyledDocument doc = textPane.getStyledDocument();
+        doc = textPane.getStyledDocument();
 
 
 //  Add some text
@@ -117,12 +119,20 @@ public class ChatServer extends JFrame implements ActionListener{
 
 
         c.gridy = 2;
+        c.gridx = 3;
+        c.gridwidth = 2;
+        c.ipadx = 0;
+        notificationButton = new JButton("Notify all users");
+        notificationButton.addActionListener(this);
+        panel_1.add(notificationButton, c);
+
+        c.gridy = 2;
         c.gridx = 0;
-        c.gridwidth = 5;
-        c.ipadx = 400;
-        JTextField showUserID = new JTextField("Put the User ID Here");
-        showUserID.setEditable(false);
-        panel_1.add(showUserID, c);
+        countUserLabel = new JLabel("There are 0 users online");
+        panel_1.add(countUserLabel, c);
+
+
+
 
     }
 
@@ -138,7 +148,7 @@ public class ChatServer extends JFrame implements ActionListener{
                 portConfig.show();
                 break;
             case "Startup Service":
-                server = new Server();
+                server = new Server(textPane);
                 server.setPortNo(portNo);
                 server.start();
                 stopServiceButton.setEnabled(true);
@@ -160,6 +170,8 @@ public class ChatServer extends JFrame implements ActionListener{
             case "Send":
 
                 break;
+            case "Notify all users":
+
             default:
                 System.out.println("It should not happened");
                 break;

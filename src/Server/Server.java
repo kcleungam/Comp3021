@@ -1,5 +1,7 @@
 package Server;
 
+import javax.swing.*;
+import javax.swing.text.StyledDocument;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -24,28 +26,43 @@ public class Server extends Thread{
     public ArrayList<Socket> socketArrayList = new ArrayList<>();
     public ArrayList<ServerThread> threadPool = new ArrayList<>();
 
-    public Server() {
+    public static ArrayList<ClientData> clientDataArrayList;
+    public static int idCount = 0;
+
+    public JTextPane textPane;
+    public StyledDocument doc;
+    public static boolean stopingServier = false;
+
+    public static ArrayList<String> serverMessageList = new ArrayList<>();
+    public ConstantSend constantSend;
+
+    public Server(JTextPane textP) {
         try {
+            textPane = textP;
             portNo = Integer.parseInt(ChatServer.portNo);
             serverSocket = new ServerSocket(portNo);
             serverSocket.setSoTimeout(1000000);
             serverName = "ChatServer";
             countOnline = 0;
             Ready = false;
+            constantSend = new ConstantSend();
+            clientDataArrayList = new ArrayList<>();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+
     @Override
     public void run() {
+        constantSend.start();
         running = true;
         while (running == true) {
                     try {
                         System.out.println("Waiting for client on port " + serverSocket.getLocalPort() + "...");
                         Socket soc = serverSocket.accept();
                         socketArrayList.add(soc);
-                        ServerThread thread = new ServerThread(soc,this);
+                        ServerThread thread = new ServerThread(soc,this,textPane);
                         thread.start();
                         threadPool.add(thread);
 
@@ -77,25 +94,27 @@ public class Server extends Thread{
     }
 
     public void stopServer(){
-        running = false;
-        try {
-            for(int i = socketArrayList.size() - 1; i >= 0 ; i--){
-                try {
-                    socketArrayList.get(i).close();
-                    socketArrayList.remove(i);
-                } catch (SocketTimeoutException s) {
-                    System.out.println("Socket timed out!");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (Exception e) {
+        stopingServier = true;
+        serverMessageList.add("Kill");
+
+        while (true){
+            if(threadPool.size() == 0){
+                try{
+                    serverSocket.close();
+                    this.stop();
+                    break;
+                } catch (Exception e){
                     e.printStackTrace();
                 }
             }
-            serverSocket.close();
-            this.stop();
-        } catch (Exception e){
-            e.printStackTrace();
+            try{
+                Thread.currentThread().sleep(1000);
+            } catch (Exception e){
+                e.printStackTrace();
+            }
         }
+
+        updateClientCount();
     }
 
     public void setPortNo(String port){
@@ -119,52 +138,9 @@ public class Server extends Thread{
         } catch (Exception e){}
     }
 
-    public void listen(){
 
-        for(int i = 0; i < socketArrayList.size(); i++){
-            try {
-                String s = binArray.get(i).readLine();
-            } catch (Exception e){
-                e.printStackTrace();
-            }
-
-        }
-
-        /*              Listen input
-         for(int j=0;j<clients;j++){
-            if(generating[j] == true) {
-                if(count % freq == 0) {
-		    String s = Bin[j].readLine();
-                    if( s.equals("false")){	//Remember everytime readLine will clear buffer, read again will fail
-				System.out.println("Shutting Down");
-				clients--;
-				soc[j].close();
-				if(clients == 0){
-					haveClient = false;
-					shutdown = true;
-				}
-		    }else{
-			System.out.println("Sent");
-		    }
-                }
-            }
-        }
-
-
-        for(int j=0 ;j<clients;j++){
-            if(generating[j] == true) {
-                if(count % freq == 0) {
-                    out[j].writeInt(Math.abs(random.nextInt()% 100));           //Send things out
-                    out[j].flush();
-                }
-            }
-        }
-
-        */
-    }
-
-    public int getClientCount(){
-        return socketArrayList.size();
+    public void updateClientCount(){
+        ChatServer.countUserLabel.setText("There are " + clientDataArrayList.size() + " users online");
     }
 
     public void exchangeMessage(String message){
@@ -173,6 +149,67 @@ public class Server extends Thread{
 
     public void removeThread(ServerThread serverThread){
         threadPool.remove(serverThread);
+    }
+
+    public void removeOnlineUser(int id, String username){
+        for(int i = clientDataArrayList.size() - 1; i >= 0 ; i--){
+            if(clientDataArrayList.get(i).id == id && clientDataArrayList.get(i).username.equals(username)){
+                clientDataArrayList.remove(i);
+            }
+        }
+    }
+
+    class ConstantSend extends Thread{
+
+        public void run() {
+            while (true) {
+                updateClientCount();
+
+                String topMessage = "";
+                if(Server.serverMessageList.size() > 0){
+                    topMessage = Server.serverMessageList.get(Server.serverMessageList.size() - 1);
+                    System.out.println(topMessage);
+                    Server.serverMessageList.remove(Server.serverMessageList.size() - 1);
+                }
+                    for (ServerThread st : threadPool) {
+                        st.setServerMessage(topMessage);
+                    }
+                    while (true) {
+                        boolean sendDone = true;
+                        for (ServerThread st : threadPool) {
+                            if (st.sendDone == false) {
+                                sendDone = false;
+                            }
+                        }
+                        if (sendDone == true) {
+                            break;
+                        }
+                        try {
+                            this.sleep(500);
+                        } catch (Exception e) {
+                            try {
+                                this.join();
+                            } catch (Exception f) {
+                                f.printStackTrace();
+                            }
+                        }
+
+                }
+
+
+                try {
+                    this.sleep(3000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    try {
+                        this.join();
+                    } catch (Exception f) {
+                        f.printStackTrace();
+                    }
+                }
+
+            }
+        }
     }
 
 }
