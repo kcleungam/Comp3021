@@ -35,6 +35,7 @@ public class Server extends Thread{
 
     public static ArrayList<String> serverMessageList = new ArrayList<>();
     public ConstantSend constantSend;
+    public static ArrayList<Message> whisperArrayList = new ArrayList<>();
 
     public Server(JTextPane textP) {
         try {
@@ -114,6 +115,7 @@ public class Server extends Thread{
             }
         }
 
+        whisperArrayList.clear();
         updateClientCount();
     }
 
@@ -211,5 +213,40 @@ public class Server extends Thread{
             }
         }
     }
+
+    public String getNameByID(int id){
+
+        for(int i = 0; i < clientDataArrayList.size(); i++){
+            if(clientDataArrayList.get(i).id == id){
+                return clientDataArrayList.get(i).username;
+            }
+        }
+        return null;
+    }
+
+    public boolean checkWhisper(int id){
+        boolean temp = false;
+        for(int i = 0; i < whisperArrayList.size(); i++){
+            if(whisperArrayList.get(i).toID == id){
+                temp = true;
+            }
+        }
+        return temp;
+    }
+
+    public String popWhisper(int id){
+        String temp = "No command;;;;";
+        for(int i = 0; i < whisperArrayList.size(); i++){
+            if(whisperArrayList.get(i).toID == id){
+                temp = "WhisperMessage;;;;"  + getNameByID(whisperArrayList.get(i).fronID) + ";;;;" + whisperArrayList.get(i).fronID +";;;;"
+                          + getNameByID(whisperArrayList.get(i).toID) +";;;;" + whisperArrayList.get(i).toID + ";;;;"
+                        + whisperArrayList.get(i).content + ";;;;";
+                whisperArrayList.remove(i);
+                break;
+            }
+        }
+        return temp;
+    }
+
 
 }

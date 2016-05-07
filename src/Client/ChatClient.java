@@ -25,6 +25,11 @@ public class ChatClient extends JFrame implements ActionListener{
     JComboBox toWho;
     PrintWriter pout;
     BufferedReader bin;
+    JButton sendButton;
+    JButton userConfigBtn;
+    JButton connectBtn;
+    JTextField messageField;
+    JCheckBox whisper;
     DefaultComboBoxModel<String> model;
 
     public ConstantCheck constantCheck;
@@ -53,11 +58,11 @@ public class ChatClient extends JFrame implements ActionListener{
         JPanel panel = new JPanel();
         getContentPane().add(panel, BorderLayout.NORTH);
 
-        JButton userConfigBtn = new JButton("User Config");
+        userConfigBtn = new JButton("User Config");
         userConfigBtn.addActionListener(this);
         panel.add(userConfigBtn);
 
-        JButton connectBtn = new JButton("Connect Config");
+        connectBtn = new JButton("Connect Config");
         connectBtn.addActionListener(this);
         panel.add(connectBtn);
 
@@ -82,18 +87,7 @@ public class ChatClient extends JFrame implements ActionListener{
         JTextPane textPane = new JTextPane();
         getContentPane().add(textPane, BorderLayout.CENTER);
         textPane.setEditable(false);
-        textPane.setText( "original text" );
         doc = textPane.getStyledDocument();
-
-
-        //  Add some text
-
-        try
-        {
-            doc.insertString(0, "Start of text\n", null );
-            doc.insertString(doc.getLength(), "\nEnd of text", null );
-        }
-        catch(Exception e) { System.out.println(e); }
 
 
 
@@ -120,22 +114,18 @@ public class ChatClient extends JFrame implements ActionListener{
 
         model = new DefaultComboBoxModel<String>();
         toWho = new JComboBox(model);
-        JLabel emotions = new JLabel("emotions:");
-        emotions.setHorizontalAlignment(JLabel.RIGHT);
-        JComboBox emoBox = new JComboBox();
-        JCheckBox whisper = new JCheckBox("whisper");
+        whisper = new JCheckBox("whisper");
         panel_1.add(sendTo, c);
         panel_1.add(toWho, c);
-        panel_1.add(emotions, c);
-        panel_1.add(emoBox, c);
         panel_1.add(whisper, c);
 
         c.gridy = 1;
         JLabel sendMessageLabel = new JLabel("Send Message:");
         sendMessageLabel.setHorizontalAlignment(JLabel.RIGHT);
-        JTextField messageField = new JTextField();
-        JButton sendButton = new JButton("Send");
+        messageField = new JTextField();
+        sendButton = new JButton("Send");
         sendButton.addActionListener(this);
+        sendButton.setEnabled(false);
 
         panel_1.add(sendMessageLabel, c);
         c.gridwidth = 3;
@@ -179,6 +169,11 @@ public class ChatClient extends JFrame implements ActionListener{
                         bin = new BufferedReader(new InputStreamReader(socket.getInputStream())); //receiveing
                         logoutBtn.setEnabled(true);
                         loginBtn.setEnabled(false);
+                        sendButton.setEnabled(true);
+                        connectBtn.setEnabled(false);
+                        userConfigBtn.setEnabled(false);
+
+
                         pout.println("Login;;;;" + username + ";;;;");
 
                         String s = bin.readLine();
@@ -186,6 +181,7 @@ public class ChatClient extends JFrame implements ActionListener{
                         id = Integer.parseInt(strings[1]);
 
                         constantCheck = new ConstantCheck();
+                        model.addElement("All Users");
                         constantCheck.start();
 
 
@@ -210,6 +206,9 @@ public class ChatClient extends JFrame implements ActionListener{
 
                         logoutBtn.setEnabled(false);
                         loginBtn.setEnabled(true);
+                        sendButton.setEnabled(false);
+                        connectBtn.setEnabled(true);
+                        userConfigBtn.setEnabled(true);
 
                         constantCheck.stop();
                     }catch (Exception f){
@@ -220,7 +219,32 @@ public class ChatClient extends JFrame implements ActionListener{
                     System.exit(0);
                     break;
                 case "Send":
-                    //pout.println("SendFrom;;;;" + username +";;;;" id + ";;;;" + "Recieve;;;;" + );
+                    if(messageField.getText().equals("")){
+                        break;      //do nothing if no message
+                    }else{
+                        if( whisper.isSelected() ){
+                            if(toWho.getSelectedItem().toString().equals("All Users")){
+                                try {
+                                    doc.insertString(0, "Warning, you can not whisper to all user, only one user each time!\n ", null);
+                                    break;
+                                } catch (Exception f){
+                                    f.printStackTrace();
+                                }
+                            }
+                            String message = "";
+                            message += "Whisper;;;;";
+                            message += Integer.toString(id) + ";;;;";
+                            String toID = (toWho.getSelectedItem().toString().split(","))[1];
+                            message +=   toID + ";;;;";
+                            message += messageField.getText() + ";;;;";
+                            System.out.println(message);
+                            pout.println(message);
+                            messageField.setText("");
+                        } else{
+
+                        }
+
+                    }
                     break;
                 default:
                     System.out.println("It should not happened");
@@ -248,6 +272,7 @@ public class ChatClient extends JFrame implements ActionListener{
             }catch(Exception e){
                 e.printStackTrace();
             }
+
             while(true){
                 pout2.println("GetList");
                 try {
@@ -255,7 +280,18 @@ public class ChatClient extends JFrame implements ActionListener{
                     strings = s.split(";;;;");
                     if(strings[0].equals("List")){
                         for(int i = 1; i < strings.length; i++){
-                            model.addElement(strings[i]);
+                            boolean exist = false;
+                            for(int j = 0; j < model.getSize(); j++){
+                                if(model.getElementAt(j).equals(strings[i])){
+                                    System.out.println("Hi");
+                                    exist = true;               // Check if the element exists
+                                }
+                            }
+                            if(exist == false){
+                                model.addElement(strings[i]);   // add the new element if it is not exist
+                            } else{
+                                System.out.println("Fuck");
+                            }
                         }
                     }
                 } catch (Exception e){
@@ -265,7 +301,7 @@ public class ChatClient extends JFrame implements ActionListener{
                     }catch (Exception f){}
                 }
 
-                pout2.println("Check update;;;;");
+                pout2.println("Check update;;;;" + id + ";;;;");
                 try{
                     s = bin2.readLine();
                     strings = s.split(";;;;");
@@ -283,8 +319,10 @@ public class ChatClient extends JFrame implements ActionListener{
                         //do nothing
                     } else if(strings[0].equals("Notification")){
                         doc.insertString(0,"Server has just sent you a notification", null);
+                    } else if(strings[0].equals("WhisperMessage")){
+                        doc.insertString(0, strings[1] + "(" + strings[2] + ") " + " whisper to you :"  + strings[5], null);
                     }
-                    this.sleep(1000);
+                    this.sleep(1500);
 
                 } catch (Exception e){
                     try {

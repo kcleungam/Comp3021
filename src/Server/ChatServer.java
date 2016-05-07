@@ -64,19 +64,7 @@ public class ChatServer extends JFrame implements ActionListener{
 
         getContentPane().add(textPane, BorderLayout.CENTER);
         textPane.setEditable(false);
-        textPane.setText( "original text" );
         doc = textPane.getStyledDocument();
-
-
-//  Add some text
-
-        try
-        {
-            doc.insertString(0, "Start of text\n", null );
-            doc.insertString(doc.getLength(), "\nEnd of text", null );
-        }
-        catch(Exception e) { System.out.println(e); }
-
 
 
         /*
